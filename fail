@@ -1,0 +1,40 @@
+import json
+import urllib.request
+import os
+
+def lambda_handler(event, context):
+    body = json.loads(event['body'])
+    slack_event = body['event']
+
+    if slack_event['type'] == 'message':
+        text = slack_event['text']
+        channel_id = slack_event['channel']
+
+        if '약속 이름' in text:
+            send_message_slack("약속 장소를 입력해주세요.", channel_id)
+        elif '약속 장소' in text:
+            send_message_slack("약속 날짜를 선택해주세요.", channel_id)
+        elif text == '안녕':  # "안녕" 메시지에 대한 응답 추가
+            send_message_slack("안녕하세요!", channel_id)
+        else:
+            send_message_slack("명령을 인식할 수 없습니다.", channel_id)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Event processed')
+    }
+
+def send_message_slack(message, channel_id):
+    url = "https://slack.com/api/chat.postMessage"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {os.environ["SLACK_BOT_TOKEN"]}'
+    }
+    payload = {
+        'channel': channel_id,
+        'text': message
+    }
+
+    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers)
+    with urllib.request.urlopen(req) as response:
+        return response.read()
